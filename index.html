@@ -323,19 +323,30 @@
                   </div>
                 </div>
 
-                <!-- Daftar warga di blok koordinator -->
+                <!-- Daftar warga koordinator: dari blok + tambahan manual -->
                 <div class="p-4">
-                  <p class="text-[11px] font-bold tracking-wider text-slate-500 uppercase mb-2">
-                    Warga Binaan <span class="text-slate-400 normal-case font-medium" x-text="'(' + wargaByKoord(k).length + ' orang)'"></span>
-                  </p>
+                  <div class="flex items-center justify-between gap-2 mb-2">
+                    <p class="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+                      Warga Binaan <span class="text-slate-400 normal-case font-medium" x-text="'(' + wargaByKoord(k).length + ' orang)'"></span>
+                    </p>
+                    <button @click="openModalKoord(k)" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-semibold rounded-lg flex items-center gap-1">
+                      <i data-lucide="user-plus" class="w-3 h-3"></i> Tambah Warga
+                    </button>
+                  </div>
                   <div class="max-h-52 overflow-y-auto rounded-xl border border-slate-100 divide-y divide-slate-100">
                     <template x-for="w in wargaByKoord(k)" :key="w.id">
                       <div class="px-3 py-2 flex items-center justify-between gap-2 text-xs">
-                        <span class="font-medium text-slate-800 truncate" x-text="w.nama"></span>
-                        <span class="text-slate-500 shrink-0" x-text="rumahLabel(w)"></span>
+                        <div class="min-w-0 flex items-center gap-2">
+                          <span class="font-medium text-slate-800 truncate" x-text="w.nama"></span>
+                          <span x-show="isManual(k, w)" class="px-1.5 py-0.5 bg-violet-100 text-violet-700 text-[9px] font-semibold rounded shrink-0">Tambahan</span>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                          <span class="text-slate-500" x-text="rumahLabel(w)"></span>
+                          <button x-show="isManual(k, w)" @click="lepasWarga(k.id, w.id)" class="text-rose-500 hover:text-rose-700 p-0.5" title="Lepas dari koordinator ini"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+                        </div>
                       </div>
                     </template>
-                    <p x-show="wargaByKoord(k).length === 0" class="px-3 py-4 text-center text-[11px] text-slate-400">Belum ada warga di blok ini.</p>
+                    <p x-show="wargaByKoord(k).length === 0" class="px-3 py-4 text-center text-[11px] text-slate-400">Belum ada warga. Pilih blok atau klik "Tambah Warga".</p>
                   </div>
                 </div>
               </div>
@@ -548,6 +559,33 @@
           </p>
         </div>
 
+        <!-- Warga tambahan (manual) -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+              Tambah Warga <span class="text-slate-400 normal-case font-medium" x-text="'(' + formKoord.wargaIds.length + ' dipilih)'"></span>
+            </label>
+            <span class="text-[10px] text-slate-400">di luar blok yang dipilih</span>
+          </div>
+          <input type="text" x-model="cariWargaKoord" placeholder="Cari nama atau blok warga..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs mb-2">
+          <div class="max-h-48 overflow-y-auto rounded-xl border border-slate-100 divide-y divide-slate-100">
+            <template x-for="w in kandidatWarga" :key="w.id">
+              <label class="px-3 py-2 flex items-center justify-between gap-2 text-xs cursor-pointer hover:bg-slate-50" :class="formKoord.wargaIds.includes(w.id) ? 'bg-violet-50' : ''">
+                <div class="flex items-center gap-2 min-w-0">
+                  <input type="checkbox" :value="w.id" x-model.number="formKoord.wargaIds" class="accent-violet-600">
+                  <div class="min-w-0">
+                    <p class="font-medium text-slate-800 truncate" x-text="w.nama"></p>
+                    <p class="text-[10px] text-slate-400" x-text="w.hubungan"></p>
+                  </div>
+                </div>
+                <span class="text-slate-500 shrink-0" x-text="rumahLabel(w)"></span>
+              </label>
+            </template>
+            <p x-show="kandidatWarga.length === 0" class="px-3 py-4 text-center text-[11px] text-slate-400">Tidak ada warga yang cocok.</p>
+          </div>
+          <p class="text-[10px] text-slate-400 mt-1.5">Warga dari blok yang dipilih sudah otomatis masuk, jadi tidak muncul di daftar ini.</p>
+        </div>
+
         <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
           <button type="button" @click="showModalKoord = false" class="px-4 py-2 bg-slate-100 text-xs rounded-xl">Batal</button>
           <button type="submit" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs rounded-xl font-semibold">Simpan</button>
@@ -688,7 +726,8 @@
         showModalInfo: false,
         showModalKoord: false,
         detailKK: null,
-        formKoord: { id: null, nama: '', blok: [] },
+        formKoord: { id: null, nama: '', blok: [], wargaIds: [] },
+        cariWargaKoord: '',
         formWarga: emptyWarga(),
         newKas: { jenis: 'Masuk', keterangan: '', jumlah: '' },
         formInv: { id: null, nama: '', jumlah: 1, kondisi: 'Baik' },
@@ -707,7 +746,7 @@
           { id: 2, nama: 'Kursi Plastik', jumlah: 50, kondisi: 'Baik' }
         ],
         koordinatorList: JSON.parse(localStorage.getItem('rt_koordinator')) || [
-          { id: 1, nama: 'Budi Santoso', blok: ['A'] }
+          { id: 1, nama: 'Budi Santoso', blok: ['A'], wargaIds: [] }
         ],
         pengumumanList: JSON.parse(localStorage.getItem('rt_pengumuman')) || [
           { id: 1, tanggal: '2026-09-20', judul: 'Kerja Bakti Lomba Kebersihan', isi: 'Diharapkan seluruh warga hadir pada hari Minggu jam 07.00 WIB untuk kerja bakti bersama.' }
@@ -730,6 +769,14 @@
           this.$nextTick(() => lucide.createIcons());
         },
 
+
+        /* ---------- ID unik (mencegah id kembar bila disimpan di milidetik yang sama) ---------- */
+        _lastId: 0,
+        newId() {
+          const semua = [...this.wargaList, ...this.kasList, ...this.inventarisList, ...this.pengumumanList, ...this.koordinatorList].map(x => Number(x.id) || 0);
+          this._lastId = Math.max(Date.now(), this._lastId + 1, ...semua.map(n => n + 1));
+          return this._lastId;
+        },
 
         /* ---------- Logo (dipakai bersama portal warga) ---------- */
         uploadLogo(e) {
@@ -831,11 +878,11 @@
         addWarga() {
           const f = this.formWarga;
           const base = { kk: f.kk.trim(), blok: f.blok.trim().toUpperCase(), noRumah: f.noRumah.trim(), hp: f.hp, statusRumah: f.statusRumah || 'Pribadi', iuran: 'Lunas' };
-          let id = Date.now();
           const baru = [];
-          baru.push({ id: id++, nama: f.kepala.nama, nik: f.kepala.nik, hubungan: 'Kepala Keluarga', ...base });
-          f.istri.forEach((i, n) => baru.push({ id: id++, nama: i.nama, nik: i.nik, hubungan: f.istri.length > 1 ? 'Istri ' + (n + 1) : 'Istri', ...base }));
-          f.anak.forEach((a, n) => baru.push({ id: id++, nama: a.nama, nik: (a.nik || '').trim(), hubungan: f.anak.length > 1 ? 'Anak ' + (n + 1) : 'Anak', ...base }));
+          const nid = () => this.newId();
+          baru.push({ id: nid(), nama: f.kepala.nama, nik: f.kepala.nik, hubungan: 'Kepala Keluarga', ...base });
+          f.istri.forEach((i, n) => baru.push({ id: nid(), nama: i.nama, nik: i.nik, hubungan: f.istri.length > 1 ? 'Istri ' + (n + 1) : 'Istri', ...base }));
+          f.anak.forEach((a, n) => baru.push({ id: nid(), nama: a.nama, nik: (a.nik || '').trim(), hubungan: f.anak.length > 1 ? 'Anak ' + (n + 1) : 'Anak', ...base }));
           this.wargaList = [...this.wargaList, ...baru];
           this.showModalWarga = false;
         },
@@ -865,24 +912,52 @@
           const dipakai = new Set(this.koordinatorList.flatMap(k => k.blok));
           return this.semuaBlok().filter(b => !dipakai.has(b));
         },
+        // Warga koordinator = warga di blok yang dipegang + warga tambahan manual (tanpa duplikat)
         wargaByKoord(k) {
-          return this.wargaList.filter(w => k.blok.includes((w.blok || '').trim().toUpperCase()));
+          const ids = new Set(k.wargaIds || []);
+          return this.wargaList.filter(w => k.blok.includes((w.blok || '').trim().toUpperCase()) || ids.has(w.id));
+        },
+        // Warga ini "tambahan" bila dipilih manual dan bukan otomatis dari blok
+        isManual(k, w) {
+          return (k.wargaIds || []).includes(w.id) && !k.blok.includes((w.blok || '').trim().toUpperCase());
+        },
+        // Daftar pilihan di modal: warga yang belum otomatis masuk lewat blok yang sedang dicentang
+        get kandidatWarga() {
+          const q = this.cariWargaKoord.trim().toLowerCase();
+          const blokDipilih = this.formKoord.blok;
+          return this.wargaList.filter(w => {
+            const blokW = (w.blok || '').trim().toUpperCase();
+            if (blokDipilih.includes(blokW)) return false;
+            if (!q) return true;
+            return (w.nama || '').toLowerCase().includes(q) || blokW.toLowerCase().includes(q) || (w.noRumah || '').toLowerCase().includes(q);
+          });
+        },
+        lepasWarga(koordId, wargaId) {
+          this.koordinatorList = this.koordinatorList.map(k =>
+            k.id === koordId ? { ...k, wargaIds: (k.wargaIds || []).filter(id => id !== wargaId) } : k);
         },
         blokDipakaiLain() {
           const lain = this.koordinatorList.filter(k => k.id !== this.formKoord.id).flatMap(k => k.blok);
           return this.formKoord.blok.filter(b => lain.includes(b));
         },
         openModalKoord(k = null) {
-          this.formKoord = k ? { id: k.id, nama: k.nama, blok: [...k.blok] } : { id: null, nama: '', blok: [] };
+          this.cariWargaKoord = '';
+          this.formKoord = k
+            ? { id: k.id, nama: k.nama, blok: [...k.blok], wargaIds: [...(k.wargaIds || [])] }
+            : { id: null, nama: '', blok: [], wargaIds: [] };
           this.showModalKoord = true;
+          this.$nextTick(() => lucide.createIcons());
         },
         saveKoord() {
           const pilih = [...this.formKoord.blok].sort();
+          // Simpan hanya warga yang masih ada dan bukan bagian dari blok terpilih (hindari duplikat)
+          const validIds = new Set(this.wargaList.map(w => w.id));
+          const wargaIds = [...new Set(this.formKoord.wargaIds)].filter(id => validIds.has(id) && !pilih.includes(((this.wargaList.find(w => w.id === id) || {}).blok || '').trim().toUpperCase()));
           // Satu blok hanya boleh punya satu koordinator: cabut dari koordinator lain
           let daftar = this.koordinatorList
             .filter(k => k.id !== this.formKoord.id)
             .map(k => ({ ...k, blok: k.blok.filter(b => !pilih.includes(b)) }));
-          const data = { id: this.formKoord.id || Date.now(), nama: this.formKoord.nama.trim(), blok: pilih };
+          const data = { id: this.formKoord.id || this.newId(), nama: this.formKoord.nama.trim(), blok: pilih, wargaIds };
           if (this.formKoord.id) {
             const idx = this.koordinatorList.findIndex(k => k.id === this.formKoord.id);
             daftar.splice(idx, 0, data);
@@ -898,7 +973,7 @@
 
         /* ---------- Kas ---------- */
         addKas() {
-          this.kasList = [{ id: Date.now(), tanggal: new Date().toISOString().split('T')[0], ...this.newKas }, ...this.kasList];
+          this.kasList = [{ id: this.newId(), tanggal: new Date().toISOString().split('T')[0], ...this.newKas }, ...this.kasList];
           this.newKas = { jenis: 'Masuk', keterangan: '', jumlah: '' };
           this.showModalKas = false;
         },
@@ -915,7 +990,7 @@
           if (this.formInv.id) {
             this.inventarisList = this.inventarisList.map(i => i.id === this.formInv.id ? { ...this.formInv } : i);
           } else {
-            this.inventarisList = [...this.inventarisList, { ...this.formInv, id: Date.now() }];
+            this.inventarisList = [...this.inventarisList, { ...this.formInv, id: this.newId() }];
           }
           this.showModalInv = false;
         },
@@ -925,7 +1000,7 @@
 
         /* ---------- Pengumuman ---------- */
         addInfo() {
-          this.pengumumanList = [{ id: Date.now(), tanggal: new Date().toISOString().split('T')[0], ...this.newInfo }, ...this.pengumumanList];
+          this.pengumumanList = [{ id: this.newId(), tanggal: new Date().toISOString().split('T')[0], ...this.newInfo }, ...this.pengumumanList];
           this.newInfo = { judul: '', isi: '' };
           this.showModalInfo = false;
         },
