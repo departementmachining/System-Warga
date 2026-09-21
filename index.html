@@ -245,33 +245,39 @@
             </button>
           </div>
 
-          <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          <div class="bg-white rounded-2xl border border-slate-200 overflow-x-auto shadow-sm">
             <table class="w-full text-left border-collapse text-xs">
               <thead>
                 <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase">
-                  <th class="p-3">Nama</th><th class="p-3">NIK</th><th class="p-3">KK</th>
-                  <th class="p-3">Blok / No. Rumah</th><th class="p-3">Hubungan</th><th class="p-3">No HP</th>
+                  <th class="p-3">Kepala Keluarga</th><th class="p-3">No. KK</th>
+                  <th class="p-3">Blok / No. Rumah</th><th class="p-3">Status Rumah</th>
+                  <th class="p-3 text-center">Anggota</th><th class="p-3">No HP</th>
                   <th class="p-3 text-center">Iuran</th><th class="p-3 text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100">
-                <template x-for="w in filteredWarga" :key="w.id">
+                <template x-for="w in filteredKepala" :key="w.id">
                   <tr class="hover:bg-slate-50">
-                    <td class="p-3 font-semibold" x-text="w.nama"></td>
-                    <td class="p-3" x-text="w.nik"></td>
+                    <td class="p-3">
+                      <button @click="bukaDetail(w)" class="font-semibold text-emerald-700 hover:text-emerald-900 hover:underline text-left" title="Klik untuk lihat detail keluarga" x-text="w.nama"></button>
+                    </td>
                     <td class="p-3" x-text="w.kk"></td>
                     <td class="p-3" x-text="rumahLabel(w)"></td>
-                    <td class="p-3" x-text="w.hubungan"></td>
+                    <td class="p-3">
+                      <span class="px-2 py-1 rounded-full text-[10px] font-semibold" :class="statusRumahOf(w) === 'Pribadi' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'" x-text="statusRumahOf(w)"></span>
+                    </td>
+                    <td class="p-3 text-center"><span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md font-semibold" x-text="anggotaKK(w.kk).length + ' orang'"></span></td>
                     <td class="p-3" x-text="w.hp || '-'"></td>
                     <td class="p-3 text-center">
                       <button @click="toggleIuran(w.id)" class="px-2 py-1 rounded-full text-[10px] font-semibold" :class="w.iuran === 'Lunas' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'" x-text="w.iuran"></button>
                     </td>
-                    <td class="p-3 text-right">
-                      <button @click="deleteWarga(w.id)" class="text-rose-600 hover:text-rose-800 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    <td class="p-3 text-right whitespace-nowrap">
+                      <button @click="bukaDetail(w)" class="text-emerald-700 hover:text-emerald-900 p-1" title="Detail"><i data-lucide="eye" class="w-4 h-4"></i></button>
+                      <button @click="deleteKeluarga(w.kk)" class="text-rose-600 hover:text-rose-800 p-1" title="Hapus keluarga"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                     </td>
                   </tr>
                 </template>
-                <tr x-show="filteredWarga.length === 0"><td colspan="8" class="p-6 text-center text-slate-400">Belum ada data warga.</td></tr>
+                <tr x-show="filteredKepala.length === 0"><td colspan="8" class="p-6 text-center text-slate-400">Belum ada data warga.</td></tr>
               </tbody>
             </table>
           </div>
@@ -441,6 +447,17 @@
             <input type="text" x-model="formWarga.blok" placeholder="Blok Rumah (mis. A)" required class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
             <input type="text" x-model="formWarga.noRumah" placeholder="Nomor Rumah (mis. 12)" required class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
             <input type="text" x-model="formWarga.kk" placeholder="No. KK" required class="col-span-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+            <div class="col-span-2">
+              <label class="block text-[11px] font-semibold text-slate-500 mb-1">Status Rumah</label>
+              <div class="grid grid-cols-2 gap-2">
+                <label class="flex items-center gap-2 p-2.5 rounded-xl border text-xs cursor-pointer" :class="formWarga.statusRumah === 'Pribadi' ? 'bg-blue-50 border-blue-300 text-blue-800 font-semibold' : 'bg-slate-50 border-slate-200 text-slate-600'">
+                  <input type="radio" value="Pribadi" x-model="formWarga.statusRumah" class="accent-blue-600"> Rumah Pribadi
+                </label>
+                <label class="flex items-center gap-2 p-2.5 rounded-xl border text-xs cursor-pointer" :class="formWarga.statusRumah === 'Kontrak' ? 'bg-orange-50 border-orange-300 text-orange-800 font-semibold' : 'bg-slate-50 border-slate-200 text-slate-600'">
+                  <input type="radio" value="Kontrak" x-model="formWarga.statusRumah" class="accent-orange-600"> Ngontrak
+                </label>
+              </div>
+            </div>
             <input type="text" x-model="formWarga.hp" placeholder="No HP (opsional)" class="col-span-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
           </div>
         </div>
@@ -486,7 +503,7 @@
             <template x-for="(a, idx) in formWarga.anak" :key="idx">
               <div class="grid grid-cols-[1fr_1fr_auto] gap-2">
                 <input type="text" x-model="a.nama" :placeholder="'Nama Anak ' + (idx + 1)" required class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
-                <input type="text" x-model="a.nik" :placeholder="'NIK Anak ' + (idx + 1)" required class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+                <input type="text" x-model="a.nik" :placeholder="'NIK Anak ' + (idx + 1) + ' (boleh kosong)'" class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
                 <button type="button" @click="formWarga.anak.splice(idx, 1)" class="px-3 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-semibold">Hapus</button>
               </div>
             </template>
@@ -536,6 +553,56 @@
           <button type="submit" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs rounded-xl font-semibold">Simpan</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL DETAIL KELUARGA ==================== -->
+  <div x-show="detailKK" @click.self="detailKK = null" @keydown.escape.window="detailKK = null" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-xl">
+      <div class="p-5 border-b border-slate-100 flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <p class="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Detail Keluarga</p>
+          <h3 class="font-bold text-slate-800 text-base truncate" x-text="detailKepala ? detailKepala.nama : ''"></h3>
+        </div>
+        <button @click="detailKK = null" class="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg shrink-0"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <div class="overflow-y-auto flex-1 p-5 space-y-5" x-show="detailKepala">
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div class="p-3 bg-slate-50 rounded-xl"><p class="text-[10px] text-slate-400 font-semibold uppercase">No. KK</p><p class="font-semibold text-slate-800 mt-0.5 break-all" x-text="detailKepala ? detailKepala.kk : ''"></p></div>
+          <div class="p-3 bg-slate-50 rounded-xl"><p class="text-[10px] text-slate-400 font-semibold uppercase">Blok / No. Rumah</p><p class="font-semibold text-slate-800 mt-0.5" x-text="detailKepala ? rumahLabel(detailKepala) : ''"></p></div>
+          <div class="p-3 bg-slate-50 rounded-xl">
+            <p class="text-[10px] text-slate-400 font-semibold uppercase">Status Rumah</p>
+            <select :value="detailKepala ? statusRumahOf(detailKepala) : 'Pribadi'" @change="setStatusRumah(detailKK, $event.target.value)" class="mt-1 w-full p-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold">
+              <option value="Pribadi">Rumah Pribadi</option><option value="Kontrak">Ngontrak</option>
+            </select>
+          </div>
+          <div class="p-3 bg-slate-50 rounded-xl"><p class="text-[10px] text-slate-400 font-semibold uppercase">No HP</p><p class="font-semibold text-slate-800 mt-0.5" x-text="detailKepala && detailKepala.hp ? detailKepala.hp : '-'"></p></div>
+        </div>
+
+        <div>
+          <p class="text-[11px] font-bold tracking-wider text-slate-500 uppercase mb-2">Anggota Keluarga <span class="text-slate-400 normal-case font-medium" x-text="'(' + anggotaKK(detailKK).length + ' orang)'"></span></p>
+          <div class="rounded-xl border border-slate-100 divide-y divide-slate-100">
+            <template x-for="a in anggotaKK(detailKK)" :key="a.id">
+              <div class="px-3 py-2.5 flex items-center justify-between gap-3 text-xs">
+                <div class="min-w-0">
+                  <p class="font-semibold text-slate-800 truncate" x-text="a.nama"></p>
+                  <p class="text-slate-500 mt-0.5" x-text="'NIK: ' + (a.nik || 'Belum diisi')"></p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold" :class="a.hubungan === 'Kepala Keluarga' ? 'bg-emerald-100 text-emerald-700' : (a.hubungan.startsWith('Istri') ? 'bg-pink-100 text-pink-700' : 'bg-sky-100 text-sky-700')" x-text="a.hubungan"></span>
+                  <button x-show="a.hubungan !== 'Kepala Keluarga'" @click="deleteAnggota(a.id)" class="text-rose-500 hover:text-rose-700 p-1" title="Hapus anggota ini"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-4 border-t border-slate-100 flex justify-between gap-2">
+        <button @click="deleteKeluarga(detailKK)" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold rounded-xl flex items-center gap-1.5"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Hapus Keluarga</button>
+        <button @click="detailKK = null" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-xs rounded-xl font-medium">Tutup</button>
+      </div>
     </div>
   </div>
 
@@ -602,7 +669,7 @@
   <script>
     function adminApp() {
       const emptyWarga = () => ({
-        blok: '', noRumah: '', kk: '', hp: '',
+        blok: '', noRumah: '', kk: '', hp: '', statusRumah: 'Pribadi',
         kepala: { nama: '', nik: '' },
         istri: [],
         anak: []
@@ -620,6 +687,7 @@
         showModalInv: false,
         showModalInfo: false,
         showModalKoord: false,
+        detailKK: null,
         formKoord: { id: null, nama: '', blok: [] },
         formWarga: emptyWarga(),
         newKas: { jenis: 'Masuk', keterangan: '', jumlah: '' },
@@ -627,8 +695,8 @@
         newInfo: { judul: '', isi: '' },
 
         wargaList: JSON.parse(localStorage.getItem('rt_warga')) || [
-          { id: 1, nama: 'Budi Santoso', nik: '3171012304850001', kk: '3171012304850099', blok: 'A', noRumah: '12', hubungan: 'Kepala Keluarga', hp: '081234567890', iuran: 'Lunas' },
-          { id: 2, nama: 'Siti Aminah', nik: '3171012304850002', kk: '3171012304850099', blok: 'A', noRumah: '12', hubungan: 'Istri', hp: '081234567891', iuran: 'Lunas' }
+          { id: 1, nama: 'Budi Santoso', nik: '3171012304850001', kk: '3171012304850099', blok: 'A', noRumah: '12', hubungan: 'Kepala Keluarga', hp: '081234567890', statusRumah: 'Pribadi', iuran: 'Lunas' },
+          { id: 2, nama: 'Siti Aminah', nik: '3171012304850002', kk: '3171012304850099', blok: 'A', noRumah: '12', hubungan: 'Istri', hp: '081234567891', statusRumah: 'Pribadi', iuran: 'Lunas' }
         ],
         kasList: JSON.parse(localStorage.getItem('rt_kas')) || [
           { id: 1, tanggal: '2026-09-01', jenis: 'Masuk', keterangan: 'Iuran Kas Bulanan Warga', jumlah: 1500000 },
@@ -707,16 +775,30 @@
         logout() { this.isLoggedIn = false; this.loginForm = { username: '', password: '' }; },
 
         /* ---------- Helper ---------- */
-        get filteredWarga() {
-          const q = this.searchWarga.toLowerCase();
-          if (!q) return this.wargaList;
-          return this.wargaList.filter(w =>
+        // Pencarian mencakup seluruh anggota, tapi yang ditampilkan hanya kepala keluarga
+        get filteredKepala() {
+          const q = this.searchWarga.trim().toLowerCase();
+          const kepalaList = this.wargaList.filter(w => w.hubungan === 'Kepala Keluarga');
+          if (!q) return kepalaList;
+          return kepalaList.filter(k => this.anggotaKK(k.kk).some(w =>
             (w.nama || '').toLowerCase().includes(q) ||
             (w.nik || '').includes(q) ||
             (w.kk || '').includes(q) ||
             (w.blok || '').toLowerCase().includes(q) ||
             (w.noRumah || '').toLowerCase().includes(q)
-          );
+          ));
+        },
+        get detailKepala() {
+          return this.detailKK ? this.wargaList.find(w => w.kk === this.detailKK && w.hubungan === 'Kepala Keluarga') || null : null;
+        },
+        anggotaKK(kk) {
+          const urut = h => h === 'Kepala Keluarga' ? 0 : h.startsWith('Istri') ? 1 : 2;
+          return this.wargaList.filter(w => w.kk === kk).sort((a, b) => urut(a.hubungan) - urut(b.hubungan));
+        },
+        statusRumahOf(w) { return w.statusRumah || 'Pribadi'; },
+        bukaDetail(w) { this.detailKK = w.kk; this.$nextTick(() => lucide.createIcons()); },
+        setStatusRumah(kk, val) {
+          this.wargaList = this.wargaList.map(w => w.kk === kk ? { ...w, statusRumah: val } : w);
         },
         countKK() { return new Set(this.wargaList.map(w => w.kk)).size; },
         hitungSaldo() { return this.kasList.reduce((acc, k) => k.jenis === 'Masuk' ? acc + Number(k.jumlah) : acc - Number(k.jumlah), 0); },
@@ -748,17 +830,24 @@
         },
         addWarga() {
           const f = this.formWarga;
-          const base = { kk: f.kk, blok: f.blok.trim().toUpperCase(), noRumah: f.noRumah.trim(), hp: f.hp, iuran: 'Lunas' };
+          const base = { kk: f.kk.trim(), blok: f.blok.trim().toUpperCase(), noRumah: f.noRumah.trim(), hp: f.hp, statusRumah: f.statusRumah || 'Pribadi', iuran: 'Lunas' };
           let id = Date.now();
           const baru = [];
           baru.push({ id: id++, nama: f.kepala.nama, nik: f.kepala.nik, hubungan: 'Kepala Keluarga', ...base });
           f.istri.forEach((i, n) => baru.push({ id: id++, nama: i.nama, nik: i.nik, hubungan: f.istri.length > 1 ? 'Istri ' + (n + 1) : 'Istri', ...base }));
-          f.anak.forEach((a, n) => baru.push({ id: id++, nama: a.nama, nik: a.nik, hubungan: f.anak.length > 1 ? 'Anak ' + (n + 1) : 'Anak', ...base }));
+          f.anak.forEach((a, n) => baru.push({ id: id++, nama: a.nama, nik: (a.nik || '').trim(), hubungan: f.anak.length > 1 ? 'Anak ' + (n + 1) : 'Anak', ...base }));
           this.wargaList = [...this.wargaList, ...baru];
           this.showModalWarga = false;
         },
-        deleteWarga(id) {
-          if (confirm('Hapus data warga ini?')) this.wargaList = this.wargaList.filter(w => w.id !== id);
+        deleteKeluarga(kk) {
+          const jumlah = this.anggotaKK(kk).length;
+          if (!confirm('Hapus seluruh keluarga ini (' + jumlah + ' orang)? Tindakan ini tidak bisa dibatalkan.')) return;
+          this.wargaList = this.wargaList.filter(w => w.kk !== kk);
+          if (this.detailKK === kk) this.detailKK = null;
+        },
+        deleteAnggota(id) {
+          if (!confirm('Hapus anggota keluarga ini?')) return;
+          this.wargaList = this.wargaList.filter(w => w.id !== id);
         },
         toggleIuran(id) {
           this.wargaList = this.wargaList.map(w => w.id === id ? { ...w, iuran: w.iuran === 'Lunas' ? 'Belum Bayar' : 'Lunas' } : w);
