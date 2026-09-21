@@ -25,8 +25,9 @@
         <div class="absolute -left-10 -top-10 w-40 h-40 bg-emerald-800 rounded-full opacity-50 blur-xl"></div>
 
         <div class="relative z-10">
-          <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md">
-            <i data-lucide="home" class="w-6 h-6 text-white"></i>
+          <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md overflow-hidden">
+            <template x-if="logo"><img :src="logo" alt="Logo" class="w-full h-full object-cover"></template>
+            <template x-if="!logo"><i data-lucide="home" class="w-6 h-6 text-white"></i></template>
           </div>
           <h2 class="text-2xl font-bold leading-tight">Sistem<br>Informasi RT</h2>
           <p class="text-emerald-100 text-xs mt-2 leading-relaxed">
@@ -115,11 +116,22 @@
     <!-- Sidebar -->
     <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col shrink-0">
       <div class="p-5 border-b border-slate-800 flex items-center gap-3">
-        <div class="p-2 bg-emerald-600 text-white rounded-xl"><i data-lucide="shield" class="w-5 h-5"></i></div>
-        <div>
+        <!-- Logo: klik untuk mengganti (otomatis dipakai juga di portal warga) -->
+        <label class="relative group w-10 h-10 shrink-0 rounded-xl overflow-hidden bg-emerald-600 text-white flex items-center justify-center cursor-pointer" title="Klik untuk ganti logo">
+          <template x-if="logo"><img :src="logo" alt="Logo" class="w-full h-full object-cover"></template>
+          <template x-if="!logo"><i data-lucide="shield" class="w-5 h-5"></i></template>
+          <span class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <i data-lucide="camera" class="w-4 h-4"></i>
+          </span>
+          <input type="file" accept="image/*" class="hidden" @change="uploadLogo($event)">
+        </label>
+        <div class="min-w-0 flex-1">
           <h1 class="font-bold text-white text-sm leading-none">Admin SimRT</h1>
           <span class="text-[10px] text-emerald-400">Panel Pengurus RT</span>
         </div>
+        <button x-show="logo" @click="resetLogo()" class="text-slate-500 hover:text-rose-400 p-1" title="Kembalikan logo default">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+        </button>
       </div>
 
       <nav class="flex-1 p-4 space-y-1">
@@ -128,6 +140,9 @@
         </button>
         <button @click="activeTab = 'kependudukan'" :class="activeTab === 'kependudukan' ? 'bg-emerald-600 text-white' : 'hover:bg-slate-800 text-slate-400'" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all">
           <i data-lucide="users" class="w-4 h-4"></i> Kelola Warga
+        </button>
+        <button @click="activeTab = 'koordinator'" :class="activeTab === 'koordinator' ? 'bg-emerald-600 text-white' : 'hover:bg-slate-800 text-slate-400'" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all">
+          <i data-lucide="user-check" class="w-4 h-4"></i> Kelola Koordinator
         </button>
         <button @click="activeTab = 'kas'" :class="activeTab === 'kas' ? 'bg-emerald-600 text-white' : 'hover:bg-slate-800 text-slate-400'" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all">
           <i data-lucide="wallet" class="w-4 h-4"></i> Kelola Kas RT
@@ -163,34 +178,38 @@
 
         <!-- ============ DASHBOARD (sama dengan user) ============ -->
         <div x-show="activeTab === 'dashboard'" class="space-y-6">
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-              <div>
-                <p class="text-xs text-slate-500 font-medium">Total Warga</p>
-                <p class="text-2xl font-bold text-slate-800 mt-1" x-text="wargaList.length"></p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 min-h-[104px] hover:shadow-md transition-shadow">
+              <div class="w-12 h-12 shrink-0 rounded-xl flex items-center justify-center bg-blue-50 text-blue-600"><i data-lucide="users" class="w-6 h-6"></i></div>
+              <div class="min-w-0 flex-1">
+                <p class="text-[11px] text-slate-500 font-semibold uppercase tracking-wide">Total Warga</p>
+                <p class="text-2xl font-bold text-slate-800 leading-tight mt-0.5 truncate" x-text="wargaList.length"></p>
+                <p class="text-[11px] text-slate-400 mt-0.5 truncate">Jiwa terdata</p>
               </div>
-              <div class="p-3 bg-blue-50 text-blue-600 rounded-xl"><i data-lucide="users" class="w-5 h-5"></i></div>
             </div>
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-              <div>
-                <p class="text-xs text-slate-500 font-medium">Total KK</p>
-                <p class="text-2xl font-bold text-slate-800 mt-1" x-text="countKK()"></p>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 min-h-[104px] hover:shadow-md transition-shadow">
+              <div class="w-12 h-12 shrink-0 rounded-xl flex items-center justify-center bg-emerald-50 text-emerald-600"><i data-lucide="home" class="w-6 h-6"></i></div>
+              <div class="min-w-0 flex-1">
+                <p class="text-[11px] text-slate-500 font-semibold uppercase tracking-wide">Total KK</p>
+                <p class="text-2xl font-bold text-slate-800 leading-tight mt-0.5 truncate" x-text="countKK()"></p>
+                <p class="text-[11px] text-slate-400 mt-0.5 truncate">Kepala keluarga</p>
               </div>
-              <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl"><i data-lucide="home" class="w-5 h-5"></i></div>
             </div>
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-              <div>
-                <p class="text-xs text-slate-500 font-medium">Saldo Kas RT</p>
-                <p class="text-xl font-bold text-emerald-600 mt-1" x-text="formatRupiah(hitungSaldo())"></p>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 min-h-[104px] hover:shadow-md transition-shadow">
+              <div class="w-12 h-12 shrink-0 rounded-xl flex items-center justify-center bg-amber-50 text-amber-600"><i data-lucide="wallet" class="w-6 h-6"></i></div>
+              <div class="min-w-0 flex-1">
+                <p class="text-[11px] text-slate-500 font-semibold uppercase tracking-wide">Saldo Kas RT</p>
+                <p class="text-2xl font-bold text-slate-800 leading-tight mt-0.5 truncate" x-text="formatRupiah(hitungSaldo())"></p>
+                <p class="text-[11px] text-slate-400 mt-0.5 truncate">Saldo saat ini</p>
               </div>
-              <div class="p-3 bg-amber-50 text-amber-600 rounded-xl"><i data-lucide="wallet" class="w-5 h-5"></i></div>
             </div>
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-              <div>
-                <p class="text-xs text-slate-500 font-medium">Inventaris RT</p>
-                <p class="text-2xl font-bold text-slate-800 mt-1" x-text="inventarisList.length"></p>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 min-h-[104px] hover:shadow-md transition-shadow">
+              <div class="w-12 h-12 shrink-0 rounded-xl flex items-center justify-center bg-purple-50 text-purple-600"><i data-lucide="box" class="w-6 h-6"></i></div>
+              <div class="min-w-0 flex-1">
+                <p class="text-[11px] text-slate-500 font-semibold uppercase tracking-wide">Inventaris RT</p>
+                <p class="text-2xl font-bold text-slate-800 leading-tight mt-0.5 truncate" x-text="inventarisList.length"></p>
+                <p class="text-[11px] text-slate-400 mt-0.5 truncate">Jenis barang</p>
               </div>
-              <div class="p-3 bg-purple-50 text-purple-600 rounded-xl"><i data-lucide="box" class="w-5 h-5"></i></div>
             </div>
           </div>
 
@@ -255,6 +274,67 @@
                 <tr x-show="filteredWarga.length === 0"><td colspan="8" class="p-6 text-center text-slate-400">Belum ada data warga.</td></tr>
               </tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- ============ KELOLA KOORDINATOR ============ -->
+        <div x-show="activeTab === 'koordinator'" class="space-y-4">
+          <div class="flex flex-wrap gap-3 justify-between items-center bg-white p-4 rounded-2xl border border-slate-200">
+            <div>
+              <p class="text-sm font-bold text-slate-800">Koordinator Blok</p>
+              <p class="text-[11px] text-slate-500 mt-0.5">Bagi warga per blok dan tunjuk koordinator yang bertanggung jawab.</p>
+            </div>
+            <button @click="openModalKoord()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-xl flex items-center gap-2">
+              <i data-lucide="plus" class="w-4 h-4"></i> Tambah Koordinator
+            </button>
+          </div>
+
+          <!-- Peringatan blok yang belum punya koordinator -->
+          <div x-show="blokTanpaKoordinator().length > 0" class="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs flex items-start gap-2">
+            <i data-lucide="alert-triangle" class="w-4 h-4 shrink-0 mt-0.5"></i>
+            <span>Blok belum punya koordinator: <b x-text="blokTanpaKoordinator().join(', ')"></b></span>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <template x-for="k in koordinatorList" :key="k.id">
+              <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 flex items-start justify-between gap-3 border-b border-slate-100">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-11 h-11 shrink-0 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-sm" x-text="inisial(k.nama)"></div>
+                    <div class="min-w-0">
+                      <h4 class="font-bold text-slate-800 text-sm truncate" x-text="k.nama"></h4>
+                      <div class="flex flex-wrap gap-1 mt-1">
+                        <template x-for="b in k.blok" :key="b">
+                          <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-semibold rounded-md" x-text="'Blok ' + b"></span>
+                        </template>
+                        <span x-show="k.blok.length === 0" class="text-[10px] text-slate-400">Belum ada blok</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex gap-1 shrink-0">
+                    <button @click="openModalKoord(k)" class="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg" title="Kelola"><i data-lucide="settings-2" class="w-3.5 h-3.5"></i></button>
+                    <button @click="deleteKoord(k.id)" class="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg" title="Hapus"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                  </div>
+                </div>
+
+                <!-- Daftar warga di blok koordinator -->
+                <div class="p-4">
+                  <p class="text-[11px] font-bold tracking-wider text-slate-500 uppercase mb-2">
+                    Warga Binaan <span class="text-slate-400 normal-case font-medium" x-text="'(' + wargaByKoord(k).length + ' orang)'"></span>
+                  </p>
+                  <div class="max-h-52 overflow-y-auto rounded-xl border border-slate-100 divide-y divide-slate-100">
+                    <template x-for="w in wargaByKoord(k)" :key="w.id">
+                      <div class="px-3 py-2 flex items-center justify-between gap-2 text-xs">
+                        <span class="font-medium text-slate-800 truncate" x-text="w.nama"></span>
+                        <span class="text-slate-500 shrink-0" x-text="rumahLabel(w)"></span>
+                      </div>
+                    </template>
+                    <p x-show="wargaByKoord(k).length === 0" class="px-3 py-4 text-center text-[11px] text-slate-400">Belum ada warga di blok ini.</p>
+                  </div>
+                </div>
+              </div>
+            </template>
+            <p x-show="koordinatorList.length === 0" class="lg:col-span-2 text-center text-xs text-slate-400 py-10 bg-white rounded-2xl border border-dashed border-slate-200">Belum ada koordinator. Klik "Tambah Koordinator" untuk memulai.</p>
           </div>
         </div>
 
@@ -422,6 +502,43 @@
     </div>
   </div>
 
+  <!-- ==================== MODAL KOORDINATOR ==================== -->
+  <div x-show="showModalKoord" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6 shadow-xl space-y-4">
+      <h3 class="font-bold text-slate-800 text-base" x-text="formKoord.id ? 'Kelola Koordinator' : 'Tambah Koordinator'"></h3>
+      <form @submit.prevent="saveKoord()" class="space-y-4">
+        <div>
+          <label class="block text-[11px] font-bold tracking-wider text-slate-500 uppercase mb-1">Nama Koordinator</label>
+          <input type="text" x-model="formKoord.nama" list="daftarWargaKoord" placeholder="Ketik atau pilih dari daftar warga" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+          <datalist id="daftarWargaKoord">
+            <template x-for="w in wargaList" :key="w.id"><option :value="w.nama"></option></template>
+          </datalist>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold tracking-wider text-slate-500 uppercase mb-2">Blok yang Dikoordinir</label>
+          <div class="grid grid-cols-3 gap-2">
+            <template x-for="b in semuaBlok()" :key="b">
+              <label class="flex items-center gap-2 p-2.5 rounded-xl border text-xs cursor-pointer" :class="formKoord.blok.includes(b) ? 'bg-emerald-50 border-emerald-300 text-emerald-800 font-semibold' : 'bg-slate-50 border-slate-200 text-slate-600'">
+                <input type="checkbox" :value="b" x-model="formKoord.blok" class="accent-emerald-600">
+                <span x-text="'Blok ' + b"></span>
+              </label>
+            </template>
+          </div>
+          <p x-show="semuaBlok().length === 0" class="text-[11px] text-slate-400">Belum ada blok. Tambahkan data warga dengan blok rumah terlebih dahulu.</p>
+          <p x-show="blokDipakaiLain().length > 0" class="text-[11px] text-amber-600 mt-2">
+            Blok <b x-text="blokDipakaiLain().join(', ')"></b> dipilih koordinator lain. Jika disimpan, blok dipindahkan ke koordinator ini.
+          </p>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" @click="showModalKoord = false" class="px-4 py-2 bg-slate-100 text-xs rounded-xl">Batal</button>
+          <button type="submit" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs rounded-xl font-semibold">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ==================== MODAL KAS ==================== -->
   <div x-show="showModalKas" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
@@ -493,6 +610,7 @@
 
       return {
         isLoggedIn: false,
+        logo: localStorage.getItem('rt_logo') || '',
         activeTab: 'dashboard',
         loginForm: { username: '', password: '' },
         loginError: '',
@@ -501,6 +619,8 @@
         showModalKas: false,
         showModalInv: false,
         showModalInfo: false,
+        showModalKoord: false,
+        formKoord: { id: null, nama: '', blok: [] },
         formWarga: emptyWarga(),
         newKas: { jenis: 'Masuk', keterangan: '', jumlah: '' },
         formInv: { id: null, nama: '', jumlah: 1, kondisi: 'Baik' },
@@ -518,6 +638,9 @@
           { id: 1, nama: 'Tenda RT 4x6 Meter', jumlah: 2, kondisi: 'Baik' },
           { id: 2, nama: 'Kursi Plastik', jumlah: 50, kondisi: 'Baik' }
         ],
+        koordinatorList: JSON.parse(localStorage.getItem('rt_koordinator')) || [
+          { id: 1, nama: 'Budi Santoso', blok: ['A'] }
+        ],
         pengumumanList: JSON.parse(localStorage.getItem('rt_pengumuman')) || [
           { id: 1, tanggal: '2026-09-20', judul: 'Kerja Bakti Lomba Kebersihan', isi: 'Diharapkan seluruh warga hadir pada hari Minggu jam 07.00 WIB untuk kerja bakti bersama.' }
         ],
@@ -528,12 +651,46 @@
           this.$watch('kasList', val => { localStorage.setItem('rt_kas', JSON.stringify(val)); this.renderChart(); });
           this.$watch('inventarisList', val => localStorage.setItem('rt_inv', JSON.stringify(val)));
           this.$watch('pengumumanList', val => localStorage.setItem('rt_pengumuman', JSON.stringify(val)));
+          this.$watch('koordinatorList', val => localStorage.setItem('rt_koordinator', JSON.stringify(val)));
+          this.$watch('koordinatorList', () => this.$nextTick(() => lucide.createIcons()));
           // Ikon Lucide dirender ulang setiap ada perubahan tampilan
           this.$watch('activeTab', () => this.$nextTick(() => lucide.createIcons()));
           this.$watch('wargaList', () => this.$nextTick(() => lucide.createIcons()));
           this.$watch('inventarisList', () => this.$nextTick(() => lucide.createIcons()));
           this.$watch('pengumumanList', () => this.$nextTick(() => lucide.createIcons()));
           this.$watch('kasList', () => this.$nextTick(() => lucide.createIcons()));
+          this.$nextTick(() => lucide.createIcons());
+        },
+
+
+        /* ---------- Logo (dipakai bersama portal warga) ---------- */
+        uploadLogo(e) {
+          const file = e.target.files[0];
+          if (!file) return;
+          if (!file.type.startsWith('image/')) { alert('File harus berupa gambar.'); return; }
+          const reader = new FileReader();
+          reader.onload = ev => {
+            const img = new Image();
+            img.onload = () => {
+              // Kecilkan ke maks 128px agar hemat kuota localStorage
+              const max = 128;
+              const scale = Math.min(1, max / Math.max(img.width, img.height));
+              const c = document.createElement('canvas');
+              c.width = Math.round(img.width * scale);
+              c.height = Math.round(img.height * scale);
+              c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+              this.logo = c.toDataURL('image/png');
+              try { localStorage.setItem('rt_logo', this.logo); }
+              catch (err) { alert('Gagal menyimpan logo, ukuran gambar terlalu besar.'); this.logo = ''; }
+              e.target.value = '';
+            };
+            img.src = ev.target.result;
+          };
+          reader.readAsDataURL(file);
+        },
+        resetLogo() {
+          this.logo = '';
+          localStorage.removeItem('rt_logo');
           this.$nextTick(() => lucide.createIcons());
         },
 
@@ -605,6 +762,49 @@
         },
         toggleIuran(id) {
           this.wargaList = this.wargaList.map(w => w.id === id ? { ...w, iuran: w.iuran === 'Lunas' ? 'Belum Bayar' : 'Lunas' } : w);
+        },
+
+
+        /* ---------- Koordinator ---------- */
+        inisial(nama) { return (nama || '?').trim().split(/\s+/).slice(0, 2).map(x => x[0]).join('').toUpperCase(); },
+        semuaBlok() {
+          const dariWarga = this.wargaList.map(w => (w.blok || '').trim().toUpperCase()).filter(Boolean);
+          const dariKoord = this.koordinatorList.flatMap(k => k.blok);
+          return [...new Set([...dariWarga, ...dariKoord])].sort();
+        },
+        blokTanpaKoordinator() {
+          const dipakai = new Set(this.koordinatorList.flatMap(k => k.blok));
+          return this.semuaBlok().filter(b => !dipakai.has(b));
+        },
+        wargaByKoord(k) {
+          return this.wargaList.filter(w => k.blok.includes((w.blok || '').trim().toUpperCase()));
+        },
+        blokDipakaiLain() {
+          const lain = this.koordinatorList.filter(k => k.id !== this.formKoord.id).flatMap(k => k.blok);
+          return this.formKoord.blok.filter(b => lain.includes(b));
+        },
+        openModalKoord(k = null) {
+          this.formKoord = k ? { id: k.id, nama: k.nama, blok: [...k.blok] } : { id: null, nama: '', blok: [] };
+          this.showModalKoord = true;
+        },
+        saveKoord() {
+          const pilih = [...this.formKoord.blok].sort();
+          // Satu blok hanya boleh punya satu koordinator: cabut dari koordinator lain
+          let daftar = this.koordinatorList
+            .filter(k => k.id !== this.formKoord.id)
+            .map(k => ({ ...k, blok: k.blok.filter(b => !pilih.includes(b)) }));
+          const data = { id: this.formKoord.id || Date.now(), nama: this.formKoord.nama.trim(), blok: pilih };
+          if (this.formKoord.id) {
+            const idx = this.koordinatorList.findIndex(k => k.id === this.formKoord.id);
+            daftar.splice(idx, 0, data);
+          } else {
+            daftar.push(data);
+          }
+          this.koordinatorList = daftar;
+          this.showModalKoord = false;
+        },
+        deleteKoord(id) {
+          if (confirm('Hapus koordinator ini? Warga tidak ikut terhapus.')) this.koordinatorList = this.koordinatorList.filter(k => k.id !== id);
         },
 
         /* ---------- Kas ---------- */
