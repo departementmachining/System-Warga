@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - Sistem Informasi RT</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    [x-cloak] { display: none !important; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased" x-data="adminApp()" x-init="initApp()" x-cloak>
+
+  <!-- ==================== PAGE LOGIN SPLIT CARD (UI Sesuai Gambar) ==================== -->
+  <div x-show="!isLoggedIn" class="min-h-screen flex items-center justify-center p-4 bg-emerald-50/50">
+    <div class="bg-white rounded-3xl shadow-2xl flex flex-col md:flex-row w-full max-w-4xl overflow-hidden border border-emerald-100">
+      
+      <!-- Panel Kiri (Hijau Teal Banner) -->
+      <div class="w-full md:w-5/12 bg-emerald-700 p-8 text-white flex flex-col justify-between relative overflow-hidden">
+        <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-emerald-600 rounded-full opacity-50 blur-xl"></div>
+        <div class="absolute -left-10 -top-10 w-40 h-40 bg-emerald-800 rounded-full opacity-50 blur-xl"></div>
+
+        <div class="relative z-10">
+          <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md">
+            <i data-lucide="home" class="w-6 h-6 text-white"></i>
+          </div>
+          <h2 class="text-2xl font-bold leading-tight">Sistem<br>Informasi RT</h2>
+          <p class="text-emerald-100 text-xs mt-2 leading-relaxed">
+            Kelola data warga, keuangan, dan layanan RT dalam satu platform.
+          </p>
+
+          <div class="mt-8 space-y-3">
+            <div class="flex items-center gap-3 bg-white/10 p-3 rounded-xl backdrop-blur-sm border border-white/10 text-xs">
+              <i data-lucide="users" class="w-4 h-4 text-emerald-200"></i>
+              <span>Data Warga & KK</span>
+            </div>
+            <div class="flex items-center gap-3 bg-white/10 p-3 rounded-xl backdrop-blur-sm border border-white/10 text-xs">
+              <i data-lucide="wallet" class="w-4 h-4 text-emerald-200"></i>
+              <span>Keuangan & Iuran</span>
+            </div>
+            <div class="flex items-center gap-3 bg-white/10 p-3 rounded-xl backdrop-blur-sm border border-white/10 text-xs">
+              <i data-lucide="box" class="w-4 h-4 text-emerald-200"></i>
+              <span>Inventaris RT</span>
+            </div>
+            <div class="flex items-center gap-3 bg-white/10 p-3 rounded-xl backdrop-blur-sm border border-white/10 text-xs">
+              <i data-lucide="megaphone" class="w-4 h-4 text-emerald-200"></i>
+              <span>Pengumuman & Surat</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative z-10 mt-8 pt-4 border-t border-emerald-600/50 text-[11px] text-emerald-200">
+          © 2026 Sistem RT
+        </div>
+      </div>
+
+      <!-- Panel Kanan (Form Login Admin) -->
+      <div class="w-full md:w-7/12 p-8 md:p-10 flex flex-col justify-center">
+        <div class="max-w-md mx-auto w-full">
+          <h3 class="text-2xl font-bold text-slate-800">Selamat Datang</h3>
+          <p class="text-slate-500 text-xs mt-1">Masukkan Akun Anda untuk melanjutkan</p>
+
+          <form @submit.prevent="loginAdmin()" class="mt-6 space-y-4">
+            <div x-show="loginError" class="p-3 bg-rose-50 border border-rose-200 text-rose-600 rounded-xl text-xs flex items-center gap-2">
+              <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+              <span x-text="loginError"></span>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-bold tracking-wider text-slate-500 uppercase mb-1">USERNAME</label>
+              <div class="relative">
+                <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                <input type="text" x-model="loginForm.username" placeholder="Masukkan username" required
+                  class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-emerald-600">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-bold tracking-wider text-slate-500 uppercase mb-1">PASSWORD</label>
+              <div class="relative">
+                <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                <input type="password" x-model="loginForm.password" placeholder="Masukkan password" required
+                  class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-emerald-600">
+              </div>
+            </div>
+
+            <button type="submit" 
+              class="w-full py-3 bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold rounded-xl shadow-lg shadow-emerald-700/20 transition-all flex items-center justify-center gap-2">
+              <i data-lucide="log-in" class="w-4 h-4"></i>
+              <span>Masuk ke Sistem</span>
+            </button>
+          </form>
+
+          <div class="relative my-6 text-center">
+            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
+            <span class="relative bg-white px-3 text-xs text-slate-400">Atau</span>
+          </div>
+
+          <a href="index.html" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-xl transition-all flex items-center justify-center gap-2 border border-slate-200">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>Kembali ke Portal Warga</span>
+          </a>
+
+          <p class="text-center text-xs text-slate-400 mt-6">
+            Butuh bantuan? Hubungi pengurus RT Anda
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================== DASHBOARD ADMIN PANEL ==================== -->
+  <div x-show="isLoggedIn" class="min-h-screen flex bg-slate-100">
+    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col shrink-0">
+      <div class="p-5 border-b border-slate-800 flex items-center gap-3">
+        <div class="p-2 bg-emerald-600 text-white rounded-xl"><i data-lucide="shield" class="w-5 h-5"></i></div>
+        <div>
+          <h1 class="font-bold text-white text-sm leading-none">Admin SimRT</h1>
+          <span class="text-[10px] text-emerald-400">Panel Pengurus RT</span>
+        </div>
+      </div>
+
+      <nav class="flex-1 p-4 space-y-1">
+        <button @click="activeTab = 'dashboard'" :class="activeTab === 'dashboard' ? 'bg-emerald-600 text-white' : 'hover:bg-slate-800 text-slate-400'" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+        </button>
+        <button @click="activeTab = 'kependudukan'" :class="activeTab === 'kependudukan' ? 'bg-emerald-600 text-white' : 'hover:bg-slate-800 text-slate-400'" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium">
+          <i data-lucide="users" class="w-4 h-4"></i> Kelola Warga
+        </button>
+        <button @click="activeTab = 'kas'" :class="activeTab === 'kas' ? 'bg-emerald-600 text-white' : 'hover:bg-slate-800 text-slate-400'" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium">
+          <i data-lucide="wallet" class="w-4 h-4"></i> Kelola Kas RT
+        </button>
+        <button @click="activeTab = 'inventaris'" :class="activeTab === 'inventaris' ? 'bg-emerald-600 text-white' : 'hover:bg-slate-800 text-slate-400'" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium">
+          <i data-lucide="box" class="w-4 h-4"></i> Kelola Inventaris
+        </button>
+        <button @click="activeTab = 'informasi'" :class="activeTab === 'informasi' ? 'bg-emerald-600 text-white' : 'hover:bg-slate-800 text-slate-400'" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium">
+          <i data-lucide="megaphone" class="w-4 h-4"></i> Kelola Pengumuman
+        </button>
+      </nav>
+
+      <div class="p-4 border-t border-slate-800">
+        <button @click="logout()" class="w-full py-2 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white text-xs font-medium rounded-xl transition-all flex items-center justify-center gap-2">
+          <i data-lucide="log-out" class="w-4 h-4"></i> Logout
+        </button>
+      </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen overflow-y-auto">
+      <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-20">
+        <h2 class="text-lg font-bold text-slate-800 capitalize" x-text="'Admin - ' + activeTab"></h2>
+        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+          ● Mode Admin (Full Access)
+        </span>
+      </header>
+
+      <div class="p-6 space-y-6 flex-1">
+        <!-- TAB KEPENDUDUKAN (CRUD) -->
+        <div x-show="activeTab === 'kependudukan'" class="space-y-4">
+          <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200">
+            <input type="text" x-model="searchWarga" placeholder="Cari nama, NIK, atau KK..." class="px-4 py-2 bg-slate-50 border rounded-xl text-xs w-64">
+            <button @click="showModalWarga = true" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-xl flex items-center gap-2">
+              <i data-lucide="plus" class="w-4 h-4"></i> Tambah Warga
+            </button>
+          </div>
+
+          <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-slate-50 border-b text-slate-500 font-semibold uppercase">
+                  <th class="p-3">Nama</th><th class="p-3">NIK</th><th class="p-3">KK</th><th class="p-3">Hubungan</th><th class="p-3">No HP</th><th class="p-3 text-center">Iuran</th><th class="p-3 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <template x-for="w in filteredWarga" :key="w.id">
+                  <tr class="hover:bg-slate-50">
+                    <td class="p-3 font-semibold" x-text="w.nama"></td>
+                    <td class="p-3" x-text="w.nik"></td>
+                    <td class="p-3" x-text="w.kk"></td>
+                    <td class="p-3" x-text="w.hubungan"></td>
+                    <td class="p-3" x-text="w.hp"></td>
+                    <td class="p-3 text-center">
+                      <button @click="toggleIuran(w.id)" class="px-2 py-1 rounded-full text-[10px] font-semibold" :class="w.iuran === 'Lunas' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'" x-text="w.iuran"></button>
+                    </td>
+                    <td class="p-3 text-right">
+                      <button @click="deleteWarga(w.id)" class="text-rose-600 hover:text-rose-800 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB KAS (CRUD) -->
+        <div x-show="activeTab === 'kas'" class="space-y-4">
+          <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200">
+            <span class="text-sm font-bold text-slate-800">Saldo Kas: <span class="text-emerald-700" x-text="formatRupiah(hitungSaldo())"></span></span>
+            <button @click="showModalKas = true" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-xl flex items-center gap-2">
+              <i data-lucide="plus" class="w-4 h-4"></i> Catat Transaksi
+            </button>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-slate-50 border-b text-slate-500 font-semibold uppercase">
+                  <th class="p-3">Tanggal</th><th class="p-3">Jenis</th><th class="p-3">Keterangan</th><th class="p-3 text-right">Jumlah</th><th class="p-3 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <template x-for="k in kasList" :key="k.id">
+                  <tr class="hover:bg-slate-50">
+                    <td class="p-3 text-slate-500" x-text="k.tanggal"></td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded-md text-[10px] font-semibold" :class="k.jenis === 'Masuk' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'" x-text="k.jenis"></span></td>
+                    <td class="p-3 font-medium text-slate-800" x-text="k.keterangan"></td>
+                    <td class="p-3 text-right font-bold" :class="k.jenis === 'Masuk' ? 'text-emerald-600' : 'text-rose-600'" x-text="(k.jenis === 'Masuk' ? '+ ' : '- ') + formatRupiah(k.jumlah)"></td>
+                    <td class="p-3 text-right">
+                      <button @click="deleteKas(k.id)" class="text-rose-600 hover:text-rose-800 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- DASHBOARD & MENU LAINNYA SIMILAR LOGIC -->
+        <div x-show="activeTab === 'dashboard'" class="p-6 bg-white rounded-2xl border text-center text-sm text-slate-500">
+          Selamat datang di Admin Panel RT. Gunakan menu sidebar untuk mengelola data.
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL WARGA -->
+  <div x-show="showModalWarga" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
+      <h3 class="font-bold text-slate-800 text-base">Tambah Data Warga</h3>
+      <form @submit.prevent="addWarga()" class="space-y-3">
+        <input type="text" x-model="newWarga.nama" placeholder="Nama Lengkap" required class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs">
+        <input type="text" x-model="newWarga.nik" placeholder="NIK" required class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs">
+        <input type="text" x-model="newWarga.kk" placeholder="No. KK" required class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs">
+        <select x-model="newWarga.hubungan" class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs">
+          <option>Kepala Keluarga</option><option>Istri</option><option>Anak</option>
+        </select>
+        <input type="text" x-model="newWarga.hp" placeholder="No HP" class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs">
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" @click="showModalWarga = false" class="px-4 py-2 bg-slate-100 text-xs rounded-xl">Batal</button>
+          <button type="submit" class="px-4 py-2 bg-emerald-700 text-white text-xs rounded-xl font-semibold">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL KAS -->
+  <div x-show="showModalKas" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
+      <h3 class="font-bold text-slate-800 text-base">Tambah Kas</h3>
+      <form @submit.prevent="addKas()" class="space-y-3">
+        <select x-model="newKas.jenis" class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs">
+          <option value="Masuk">Kas Masuk</option><option value="Keluar">Kas Keluar</option>
+        </select>
+        <input type="text" x-model="newKas.keterangan" placeholder="Keterangan" required class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs">
+        <input type="number" x-model="newKas.jumlah" placeholder="Jumlah (Rp)" required class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs">
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" @click="showModalKas = false" class="px-4 py-2 bg-slate-100 text-xs rounded-xl">Batal</button>
+          <button type="submit" class="px-4 py-2 bg-emerald-700 text-white text-xs rounded-xl font-semibold">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function adminApp() {
+      return {
+        isLoggedIn: false,
+        activeTab: 'kependudukan',
+        loginForm: { username: '', password: '' },
+        loginError: '',
+        searchWarga: '',
+        showModalWarga: false,
+        showModalKas: false,
+        newWarga: { nama: '', nik: '', kk: '', hubungan: 'Kepala Keluarga', hp: '', iuran: 'Lunas' },
+        newKas: { jenis: 'Masuk', keterangan: '', jumlah: '' },
+
+        wargaList: JSON.parse(localStorage.getItem('rt_warga')) || [
+          { id: 1, nama: 'Budi Santoso', nik: '3171012304850001', kk: '3171012304850099', hubungan: 'Kepala Keluarga', hp: '081234567890', iuran: 'Lunas' }
+        ],
+        kasList: JSON.parse(localStorage.getItem('rt_kas')) || [
+          { id: 1, tanggal: '2026-09-01', jenis: 'Masuk', keterangan: 'Iuran Kas Bulanan Warga', jumlah: 1500000 }
+        ],
+
+        initApp() {
+          this.$watch('wargaList', val => localStorage.setItem('rt_warga', JSON.stringify(val)));
+          this.$watch('kasList', val => localStorage.setItem('rt_kas', JSON.stringify(val)));
+          this.$nextTick(() => lucide.createIcons());
+        },
+
+        loginAdmin() {
+          if (this.loginForm.username === 'admin' && this.loginForm.password === 'admin123') {
+            this.isLoggedIn = true;
+            this.loginError = '';
+            this.$nextTick(() => lucide.createIcons());
+          } else {
+            this.loginError = 'Username / Password salah! (admin / admin123)';
+          }
+        },
+
+        logout() { this.isLoggedIn = false; },
+        get filteredWarga() {
+          if (!this.searchWarga) return this.wargaList;
+          return this.wargaList.filter(w => w.nama.toLowerCase().includes(this.searchWarga.toLowerCase()) || w.nik.includes(this.searchWarga));
+        },
+        hitungSaldo() { return this.kasList.reduce((acc, k) => k.jenis === 'Masuk' ? acc + Number(k.jumlah) : acc - Number(k.jumlah), 0); },
+        formatRupiah(num) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num); },
+        addWarga() { this.wargaList.push({ id: Date.now(), ...this.newWarga }); this.showModalWarga = false; },
+        deleteWarga(id) { this.wargaList = this.wargaList.filter(w => w.id !== id); },
+        toggleIuran(id) {
+          const w = this.wargaList.find(x => x.id === id);
+          if (w) w.iuran = w.iuran === 'Lunas' ? 'Belum Bayar' : 'Lunas';
+        },
+        addKas() {
+          this.kasList.unshift({ id: Date.now(), tanggal: new Date().toISOString().split('T')[0], ...this.newKas });
+          this.showModalKas = false;
+        },
+        deleteKas(id) { this.kasList = this.kasList.filter(k => k.id !== id); }
+      }
+    }
+  </script>
+</body>
+</html>
